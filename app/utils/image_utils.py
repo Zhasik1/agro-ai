@@ -33,9 +33,7 @@ def validate_image_bytes(data: bytes, content_type: str | None) -> None:
 
     max_bytes = settings.MAX_IMAGE_SIZE_MB * 1024 * 1024
     if len(data) > max_bytes:
-        raise InvalidImageError(
-            f"Файл өте үлкен (max {settings.MAX_IMAGE_SIZE_MB} MB)"
-        )
+        raise InvalidImageError(f"Файл өте үлкен (max {settings.MAX_IMAGE_SIZE_MB} MB)")
 
     if content_type and content_type.lower() not in settings.ALLOWED_IMAGE_TYPES:
         raise InvalidImageError(

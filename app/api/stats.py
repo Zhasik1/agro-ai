@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api", tags=["stats"])
 @router.get("/stats", response_model=StatsResponse, summary="Статистика / Statistics")
 def stats(db: Session = Depends(get_db)) -> StatsResponse:
     """Return per-species totals and the 10 most-recent registrations."""
-    counts: dict[Species, int] = {s: 0 for s in Species}
+    counts: dict[Species, int] = dict.fromkeys(Species, 0)
     rows = db.execute(select(Animal.species, func.count(Animal.id)).group_by(Animal.species)).all()
     for species_value, count in rows:
         counts[species_value] = int(count)

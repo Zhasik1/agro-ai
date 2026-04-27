@@ -2,25 +2,21 @@
 
 from __future__ import annotations
 
-import os
-
 import pandas as pd
 import plotly.express as px
-import requests
 import streamlit as st
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
+from frontend.lib.api_client import BackendError, stats as fetch_stats
+
 SPECIES_EMOJI = {"cattle": "🐂", "sheep": "🐑", "horse": "🐎"}
 
 st.set_page_config(page_title="Статистика — MalChain", page_icon="📊")
 st.title("📊 Тіркеу статистикасы")
 
 try:
-    response = requests.get(f"{BACKEND_URL}/api/stats", timeout=10)
-    response.raise_for_status()
-    data = response.json()
-except requests.RequestException as exc:
-    st.error(f"Backend қолжетімсіз: {exc}")
+    data = fetch_stats()
+except BackendError as exc:
+    st.error(f"Backend қолжетімсіз: {exc.detail}")
     st.stop()
 
 cols = st.columns(len(data["per_species"]) + 1)

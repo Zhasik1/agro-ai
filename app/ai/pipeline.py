@@ -9,6 +9,7 @@ import numpy as np
 
 from app.ai.extractors.feature_extractor import get_feature_extractor
 from app.ai.species_classifier import SpeciesDetection, get_species_classifier
+from app.ai.thresholds import classify_match_status
 from app.config import Settings, get_settings
 from app.database.models import Species
 from app.database.vector_db import VectorDBManager, VectorMatch, get_vector_db
@@ -45,16 +46,41 @@ class RegistrationOutcome:
     detection: SpeciesDetection
 
 
+def _sub_detect(detection: SpeciesDetection) -> np.ndarray:
+    """Apply the species-appropriate sub-detector to the animal crop.
+
+    Routes the bounding-box crop through the geometric ROI heuristic that
+    focuses on the discriminative region (muzzle for cattle, face for
+    sheep/horse) before passing it to the feature extractor.
+
+    Args:
+        detection: Result from the species classifier containing the crop.
+
+    Returns:
+        Sub-cropped BGR ndarray (or the original crop if too small).
+    """
+    from app.ai.detectors.face_detector import detect_face
+    from app.ai.detectors.muzzle_detector import detect_muzzle
+
+    if detection.species == Species.CATTLE:
+        return detect_muzzle(detection.cropped_image)
+    if detection.species == Species.SHEEP:
+        return detect_face(detection.cropped_image, species="sheep")
+    if detection.species == Species.HORSE:
+        return detect_face(detection.cropped_image, species="horse")
+    return detection.cropped_image
+
+
 def _classify_status(matches: list[VectorMatch], settings: Settings) -> str:
-    """Decide pipeline status from the top match similarity."""
+    """Decide pipeline status from the top match similarity.
+
+    Delegates to :func:`app.ai.thresholds.classify_match_status` so threshold
+    logic lives in a single place.  The ``settings`` parameter is kept for
+    backward compatibility with existing callers and tests.
+    """
     if not matches:
         return "new"
-    top = matches[0].similarity
-    if top >= settings.MATCH_THRESHOLD:
-        return "matched"
-    if top >= settings.SUSPECT_THRESHOLD:
-        return "suspect"
-    return "new"
+    return classify_match_status(matches[0].similarity)
 
 
 def identify_animal(
@@ -84,7 +110,8 @@ def identify_animal(
     except AnimalNotDetectedError:
         raise
 
-    embedding = extractor.extract(detection.cropped_image)
+    sub_crop = _sub_detect(detection)
+    embedding = extractor.extract(sub_crop)
     matches = vector_db.search(detection.species, embedding, top_k=top_k)
     status = _classify_status(matches, settings)
 
@@ -101,7 +128,9 @@ def identify_animal(
     )
     logger.info(
         "identify status=%s species=%s top_sim=%s",
-        status, detection.species.value, best.similarity if best else None,
+        status,
+        detection.species.value,
+        best.similarity if best else None,
     )
     return IdentificationOutcome(result=result, embedding=embedding, detection=detection)
 

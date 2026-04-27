@@ -5,7 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from app.ai import pipeline as pipeline_mod
 from app.ai.pipeline import _classify_status, identify_animal, register_animal
 from app.ai.species_classifier import SpeciesDetection
 from app.config import get_settings

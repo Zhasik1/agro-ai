@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Iterable
 from types import SimpleNamespace
-from typing import Iterable
 
 import cv2
 import numpy as np
@@ -70,10 +70,10 @@ def _coerce_bbox(bbox: object) -> tuple[float, float, float, float]:
         )
     if hasattr(bbox, "x1") and hasattr(bbox, "y1") and hasattr(bbox, "x2") and hasattr(bbox, "y2"):
         return (
-            float(getattr(bbox, "x1")),
-            float(getattr(bbox, "y1")),
-            float(getattr(bbox, "x2")),
-            float(getattr(bbox, "y2")),
+            float(bbox.x1),
+            float(bbox.y1),
+            float(bbox.x2),
+            float(bbox.y2),
         )
 
     seq = tuple(bbox)  # type: ignore[arg-type]
@@ -101,7 +101,9 @@ def decode_image_rgb(data: bytes) -> np.ndarray:
 def resize_bilinear(input: np.ndarray, target_h: int, target_w: int) -> np.ndarray:
     image = _as_uint8_rgb(input)
     if _rust_core is not None:
-        return np.asarray(_rust_core.resize_bilinear(image, int(target_h), int(target_w)), dtype=np.uint8)
+        return np.asarray(
+            _rust_core.resize_bilinear(image, int(target_h), int(target_w)), dtype=np.uint8
+        )
     return cv2.resize(image, (int(target_w), int(target_h)), interpolation=cv2.INTER_LINEAR)
 
 

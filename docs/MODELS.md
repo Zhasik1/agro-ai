@@ -81,7 +81,30 @@ improvement on a held-out evaluation set.
 
 ---
 
-## Performance
+## Sub-detection (MVP heuristic)
+
+Between species detection and feature extraction, the pipeline applies a
+species-specific geometric crop to focus the embedding on the most
+discriminative region of the animal:
+
+| Species | Region | Heuristic (H×W crop) |
+|---------|--------|----------------------|
+| Cattle  | Muzzle | `y: [0.45H, 0.95H]`, `x: [0.20W, 0.80W]` |
+| Sheep   | Face   | `y: [0.05H, 0.55H]`, `x: [0.20W, 0.80W]` |
+| Horse   | Face   | `y: [0.05H, 0.65H]`, `x: [0.20W, 0.80W]` |
+
+**Guard:** if either side of the crop is < 64 px the full bbox is passed
+through unchanged.
+
+This is a **deliberate baseline** that outperforms the previous identity
+passthrough while avoiding the need to train a dedicated detection head.
+The roadmap item to replace this is a fine-tuned YOLO head trained on
+species-specific muzzle / face datasets — see `docs/ROADMAP.md`.
+
+Implementation: `app/ai/detectors/muzzle_detector.py` and
+`app/ai/detectors/face_detector.py`.
+
+---
 
 * **No measured accuracy numbers are quoted here.** Earlier drafts of the brief proposed targets
   (e.g. ≥ 95 % top-1 on cattle), but the MVP has not been evaluated against those targets and we

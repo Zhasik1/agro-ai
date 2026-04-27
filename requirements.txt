@@ -20,6 +20,7 @@ requests==2.31.*
 python-dotenv==1.0.*
 PyYAML==6.*
 tqdm==4.66.*
+structlog>=23.0
 pytest==7.4.*
 pytest-asyncio==0.23.*
 httpx==0.26.*
