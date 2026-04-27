@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import io
-import os
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -29,10 +28,12 @@ def _isolated_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Iterator[N
     import importlib
 
     from app.database import session as session_mod
+
     importlib.reload(session_mod)
 
     # Reset vector DB singleton
     from app.database import vector_db as vec_mod
+
     vec_mod._manager = None  # type: ignore[attr-defined]
 
     yield
@@ -101,3 +102,33 @@ def client(fake_pipeline):  # noqa: ARG001 - ensures ML stays mocked
     app = create_app()
     with TestClient(app) as c:
         yield c
+
+
+@pytest.fixture
+def db_session():
+    """Yield a request-scoped SQLAlchemy session, rolling back after the test.
+
+    Depends on the ``_isolated_env`` autouse fixture to point the engine at a
+    fresh temp database.
+    """
+    from app.database.session import SessionLocal, init_db
+
+    init_db()
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.rollback()
+        session.close()
+
+
+@pytest.fixture
+def tmp_vector_store(tmp_path: Path):
+    """Return a fresh :class:`~app.database.vector_db.VectorDBManager`.
+
+    Backed by a temporary directory so tests are fully isolated.
+    Uses 768-dimensional vectors to exercise non-default dimensionality.
+    """
+    from app.database.vector_db import VectorDBManager
+
+    return VectorDBManager(storage_dir=tmp_path / "testvec", dim=768)

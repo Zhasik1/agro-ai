@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import os
-
-import requests
 import streamlit as st
 from PIL import Image, ImageDraw
 
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
+from frontend.lib.api_client import BackendError, register
+
 SPECIES_EMOJI = {"cattle": "🐂", "sheep": "🐑", "horse": "🐎"}
 
 st.set_page_config(page_title="Тіркеу — MalChain", page_icon="🆕")
@@ -36,42 +34,29 @@ if submitted:
     elif not owner_iin or len(owner_iin) != 12 or not owner_iin.isdigit():
         st.error("ЖСН 12 саннан тұруы керек.")
     else:
-        files = {"photo": (photo.name, photo.getvalue(), photo.type)}
-        form = {"owner_iin": owner_iin}
-        if age:
-            form["age_years"] = str(int(age))
-        if weight:
-            form["weight_kg"] = str(weight)
-        if breed:
-            form["breed"] = breed
-        if notes:
-            form["notes"] = notes
         try:
-            response = requests.post(
-                f"{BACKEND_URL}/api/animals/register",
-                files=files,
-                data=form,
-                timeout=120,
+            payload = register(
+                photo.getvalue(),
+                owner_iin=owner_iin,
+                age=int(age),
+                weight=float(weight),
+                breed=breed or None,
+                notes=notes or None,
             )
-        except requests.RequestException as exc:
-            st.error(f"Backend қатесі: {exc}")
-        else:
-            if response.status_code == 201:
-                payload = response.json()
-                animal = payload["animal"]
-                emoji = SPECIES_EMOJI.get(animal["species"], "🐾")
-                st.success(
-                    f"✅ Тіркелді: **{emoji} {animal['id']}** — "
-                    f"{animal['species']} (қ��еткіш {payload['detection_confidence']:.2f})"
-                )
-                st.json(animal)
-            elif response.status_code == 409:
-                err = response.json()
+            animal = payload["animal"]
+            emoji = SPECIES_EMOJI.get(animal["species"], "🐾")
+            st.success(
+                f"✅ Тіркелді: **{emoji} {animal['id']}** — "
+                f"{animal['species']} (қ��еткіш {payload['detection_confidence']:.2f})"
+            )
+            st.json(animal)
+        except BackendError as exc:
+            if exc.status == 409:
                 st.warning(
-                    f"⚠️ Бұл жануар тіркелген: **{err.get('existing_id')}** "
-                    f"(ұқсастығы {err.get('similarity', 0):.2%})"
+                    f"⚠️ Бұл жануар тіркелген: **{exc.data.get('existing_id')}** "
+                    f"(ұқсастығы {exc.data.get('similarity', 0):.2%})"
                 )
-            elif response.status_code == 422:
-                st.error(f"⚠️ Валидация: {response.json()}")
+            elif exc.status == 422:
+                st.error(f"⚠️ Валидация: {exc.detail}")
             else:
-                st.error(f"❌ {response.status_code}: {response.text}")
+                st.error(f"❌ {exc.status}: {exc.detail}")

@@ -10,3 +10,6 @@ datasets>=2.18
 huggingface_hub>=0.20
 jupyterlab>=4
 maturin>=1.7
+ruff>=0.1
+black>=23
+pytest-cov>=4

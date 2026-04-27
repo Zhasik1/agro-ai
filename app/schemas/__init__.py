@@ -2,4 +2,6 @@
 
 from __future__ import annotations
 
-__all__: list[str] = []
+from app.schemas.common import AnimalStatus, Species
+
+__all__ = ["AnimalStatus", "Species"]

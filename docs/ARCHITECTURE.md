@@ -27,8 +27,9 @@
 
 ```
 client → FastAPI → validate_image_bytes → decode_image → pipeline.identify_animal
-                                                           ├─ classifier.detect()
-                                                           ├─ extractor.extract()
+                                                           ├─ classifier.detect()   ← YOLOv8n (species + bbox)
+                                                           ├─ _sub_detect()         ← geometric ROI crop (muzzle / face)
+                                                           ├─ extractor.extract()   ← ResNet50 → 512-d embedding
                                                            ├─ vector_db.search()
                                                            └─ threshold → status
 ```

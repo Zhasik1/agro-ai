@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import logging
 import threading
-from typing import Optional
 
 import numpy as np
 import torch
@@ -81,7 +80,7 @@ class FeatureExtractor:
 
 
 _lock = threading.Lock()
-_instance: Optional[FeatureExtractor] = None
+_instance: FeatureExtractor | None = None
 
 
 def get_feature_extractor() -> FeatureExtractor:

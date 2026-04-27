@@ -1,4 +1,4 @@
-.PHONY: help install install-dev download-models download-datasets dataset-status dataset-validate eval-reid-baseline run-backend run-frontend run test clean docker-build docker-up docker-down lint format rust-build rust-install rust-test rust-bench rust-clean
+.PHONY: help install install-dev download-models download-datasets dataset-status dataset-validate eval-reid-baseline run-backend run-frontend run test coverage reset-db clean docker-build docker-up docker-down lint format rust-build rust-install rust-test rust-bench rust-clean
 
 DATA_ROOT ?= data/datasets/cattle/cattely
 RUST_WORKSPACE ?= rust_core
@@ -56,6 +56,13 @@ run:  ## Run backend and frontend concurrently (use: make -j2 run)
 
 test:  ## Run pytest with coverage
 	pytest -v --cov=app --cov-report=term-missing
+
+coverage:  ## Run pytest with coverage and open HTML report
+	pytest --cov=app --cov-report=html
+	@echo "Open htmlcov/index.html"
+
+reset-db:  ## Wipe SQLite DB and FAISS indexes (asks for confirmation)
+	python scripts/reset_db.py
 
 lint:  ## Lint with ruff + black --check
 	ruff check app tests || true

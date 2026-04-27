@@ -57,9 +57,7 @@ class _SpeciesIndex:
                 self.index = faiss.read_index(str(self.index_path))
                 with self.ids_path.open("rb") as fh:
                     self.ids = pickle.load(fh)
-                logger.info(
-                    "Loaded FAISS index for %s (n=%d)", self.species.value, len(self.ids)
-                )
+                logger.info("Loaded FAISS index for %s (n=%d)", self.species.value, len(self.ids))
             except Exception as exc:  # noqa: BLE001
                 logger.error("Failed loading index for %s: %s", self.species.value, exc)
                 self.index = faiss.IndexFlatIP(self.dim)
@@ -85,7 +83,7 @@ class _SpeciesIndex:
             k = min(top_k, self.index.ntotal)
             scores, indices = self.index.search(q, k)
         out: list[VectorMatch] = []
-        for score, idx in zip(scores[0], indices[0]):
+        for score, idx in zip(scores[0], indices[0], strict=False):
             if idx < 0:
                 continue
             out.append(VectorMatch(animal_id=self.ids[int(idx)], similarity=float(score)))
@@ -100,9 +98,9 @@ class _SpeciesIndex:
             new_index = faiss.IndexFlatIP(self.dim)
             if keep_indices:
                 # IndexFlatIP exposes reconstruct
-                vectors = np.vstack(
-                    [self.index.reconstruct(int(i)) for i in keep_indices]
-                ).astype(np.float32)
+                vectors = np.vstack([self.index.reconstruct(int(i)) for i in keep_indices]).astype(
+                    np.float32
+                )
                 new_index.add(vectors)
             self.index = new_index
             self.ids = new_ids
@@ -134,9 +132,7 @@ class VectorDBManager:
         """Insert a new (id, embedding) pair into the species index."""
         self._get_index(species).add(animal_id, embedding)
 
-    def search(
-        self, species: Species, query: np.ndarray, top_k: int = 5
-    ) -> list[VectorMatch]:
+    def search(self, species: Species, query: np.ndarray, top_k: int = 5) -> list[VectorMatch]:
         """Return up to ``top_k`` nearest matches in the species index."""
         return self._get_index(species).search(query, top_k=top_k)
 

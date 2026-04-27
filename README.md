@@ -4,6 +4,7 @@
 > _Every animal — a passport. Every passport — an opportunity._
 
 [![Status](https://img.shields.io/badge/status-MVP-blue)]()
+[![CI](https://github.com/Zhasik1/agro-ai/actions/workflows/ci.yml/badge.svg)](https://github.com/Zhasik1/agro-ai/actions/workflows/ci.yml)
 [![Hackathon](https://img.shields.io/badge/CyberShield-2026-orange)](https://ku.edu.kz/hackathon)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Made in](https://img.shields.io/badge/made%20in-Kazakhstan-blue)]()
@@ -112,19 +113,35 @@ make docker-up
 malchain/
 ├── app/                      # FastAPI backend
 │   ├── api/                  # Routers (animals, stats)
+│   │   └── deps.py           # FastAPI dependency providers
 │   ├── ai/                   # YOLO + ResNet50 + pipeline
+│   │   ├── detectors/        # Muzzle & face ROI sub-detectors
+│   │   └── thresholds.py     # Match status classification
 │   ├── database/             # SQLAlchemy + FAISS wrapper
+│   │   ├── base.py           # Declarative Base re-export
+│   │   └── repository.py     # CRUD helpers (no business logic)
 │   ├── schemas/              # Pydantic models
+│   │   └── common.py         # Species / AnimalStatus enums
 │   ├── utils/                # Image & ID helpers
 │   ├── config.py
 │   ├── exceptions.py
+│   ├── logging_setup.py      # Centralised logging (structlog / stdlib)
 │   └── main.py
 ├── frontend/                 # Streamlit multipage app
+│   └── lib/
+│       └── api_client.py     # Typed HTTP helpers + BackendError
 ├── ml_models/                # Weights (downloaded at runtime)
 ├── data/vector_dbs/          # FAISS indices (per species)
-├── scripts/                  # download_models, seed_demo_data
+├── scripts/                  # download_models, seed_demo_data, reset_db
 ├── tests/                    # pytest
-├── docs/                     # ARCHITECTURE.md, API.md
+│   ├── test_health.py
+│   ├── test_detectors.py
+│   ├── test_vector_store.py
+│   ├── test_id_generator.py
+│   └── test_repository.py
+├── docs/                     # ARCHITECTURE.md, API.md, ROADMAP.md
+├── .python-version           # 3.11
+├── .github/workflows/ci.yml  # Python CI (ruff + black + pytest)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── Makefile
@@ -195,6 +212,7 @@ make download-datasets    # = python scripts/download_datasets.py --list
 make dataset-status       # show ready/manual-pending status per dataset
 make dataset-validate     # validate payloads + format checks (image probe / YOLO / split paths)
 make eval-reid-baseline   # baseline re-id metrics on identity folders (override DATA_ROOT=...)
+make reset-db             # wipe SQLite DB and FAISS indexes (asks for confirmation)
 python scripts/download_datasets.py --download cattle   # huggingface / git modes auto-fetch
 python scripts/download_datasets.py --download all      # manual modes print instructions
 ```

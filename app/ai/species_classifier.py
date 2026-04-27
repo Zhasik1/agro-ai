@@ -11,7 +11,6 @@ from __future__ import annotations
 import logging
 import threading
 from dataclasses import dataclass
-from typing import Optional
 
 import numpy as np
 
@@ -73,9 +72,7 @@ class SpeciesClassifier:
         if image_bgr is None or image_bgr.size == 0:
             raise AnimalNotDetectedError("Бос сурет / Empty image")
 
-        results = self._model.predict(
-            image_bgr, conf=conf, classes=_TARGET_CLASSES, verbose=False
-        )
+        results = self._model.predict(image_bgr, conf=conf, classes=_TARGET_CLASSES, verbose=False)
         if not results:
             raise AnimalNotDetectedError("Жануар табылмады / No animal detected")
 
@@ -112,7 +109,12 @@ class SpeciesClassifier:
 
         logger.info(
             "Detected species=%s confidence=%.3f bbox=(%d,%d,%d,%d)",
-            species.value, confidence, x1, y1, x2, y2,
+            species.value,
+            confidence,
+            x1,
+            y1,
+            x2,
+            y2,
         )
 
         return SpeciesDetection(
@@ -124,7 +126,7 @@ class SpeciesClassifier:
 
 
 _lock = threading.Lock()
-_instance: Optional[SpeciesClassifier] = None
+_instance: SpeciesClassifier | None = None
 
 
 def get_species_classifier() -> SpeciesClassifier:

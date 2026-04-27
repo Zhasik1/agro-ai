@@ -15,23 +15,17 @@ from app.config import get_settings
 from app.core import accel
 from app.database.session import init_db
 from app.exceptions import MalChainError
+from app.logging_setup import configure_logging
 
 __all__ = ["app", "create_app"]
 
 logger = logging.getLogger(__name__)
 
 
-def _configure_logging(level: str) -> None:
-    logging.basicConfig(
-        level=level.upper(),
-        format="%(asctime)s | %(levelname)-7s | %(name)s | %(message)s",
-    )
-
-
 def create_app() -> FastAPI:
     """Construct and configure the FastAPI application."""
     settings = get_settings()
-    _configure_logging(settings.LOG_LEVEL)
+    configure_logging(settings.LOG_LEVEL)
 
     application = FastAPI(
         title="MalChain API",
