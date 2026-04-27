@@ -83,7 +83,7 @@ class _SpeciesIndex:
             k = min(top_k, self.index.ntotal)
             scores, indices = self.index.search(q, k)
         out: list[VectorMatch] = []
-        for score, idx in zip(scores[0], indices[0], strict=False):
+        for score, idx in zip(scores[0], indices[0], strict=True):
             if idx < 0:
                 continue
             out.append(VectorMatch(animal_id=self.ids[int(idx)], similarity=float(score)))
