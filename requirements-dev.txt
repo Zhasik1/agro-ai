@@ -1,0 +1,12 @@
+# Optional development extras for fine-tuning notebooks and dataset tooling.
+# The MVP runs without these — install only when you plan to fine-tune.
+-r requirements.txt
+
+PyYAML>=6
+tqdm>=4.66
+nbformat>=5.9
+pytorch-metric-learning>=2.4
+datasets>=2.18
+huggingface_hub>=0.20
+jupyterlab>=4
+maturin>=1.7

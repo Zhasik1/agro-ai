@@ -1,0 +1,36 @@
+services:
+  backend:
+    build: .
+    image: malchain:latest
+    container_name: malchain-backend
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: sqlite:////app/data/malchain.db
+      VECTOR_DB_PATH: /app/data/vector_dbs
+      MODEL_PATH: /app/ml_models
+      LOG_LEVEL: INFO
+    volumes:
+      - ./data:/app/data
+      - ./ml_models:/app/ml_models
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    image: malchain:latest
+    container_name: malchain-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+    environment:
+      BACKEND_URL: http://backend:8000
+    entrypoint:
+      - streamlit
+      - run
+      - frontend/app.py
+      - --server.port=8501
+      - --server.address=0.0.0.0

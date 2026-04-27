@@ -1,0 +1,56 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Env
+.env
+.env.local
+
+# Databases
+*.db
+*.sqlite
+*.sqlite3
+
+# ML weights (downloaded at runtime)
+ml_models/*.pt
+ml_models/*.bin
+ml_models/*.safetensors
+ml_models/*.onnx
+
+# FAISS indices (regenerated)
+data/vector_dbs/*/
+!data/vector_dbs/.gitkeep
+data/sample_images/*
+!data/sample_images/.gitkeep
+
+# Test artefacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Datasets (downloaded by scripts/download_datasets.py)
+data/datasets/
+
+# Notebook checkpoints
+notebooks/.ipynb_checkpoints/
+.ipynb_checkpoints/
+
+# Tooling caches
+.ruff_cache/
+.mypy_cache/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.log

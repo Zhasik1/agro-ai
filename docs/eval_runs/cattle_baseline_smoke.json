@@ -1,0 +1,14 @@
+{
+  "query_count": 20,
+  "gallery_count": 129,
+  "pair_count": 2580,
+  "positive_pairs": 129,
+  "negative_pairs": 2451,
+  "top1": 0.95,
+  "roc_auc": 0.9388321172500388,
+  "species": "cattle",
+  "seed": 42,
+  "unreadable_query_images": 0,
+  "unreadable_gallery_images": 0,
+  "sampled_identities": 20
+}

@@ -1,0 +1,73 @@
+# Verified livestock biometric datasets (Part 2 — Section 12).
+#
+# Schema:
+#   <species>:
+#     - name:     short slug (folder under data/datasets/<species>/<name>)
+#       mode:     huggingface | git | https | manual
+#       url:      source URL (verbatim from docs/DATASETS.md)
+#       license:  see-card | see-paper | see-repo | open | <SPDX/text>
+#       hf_id:    "<org>/<repo>"      # only for mode: huggingface
+#       file_url: direct archive URL  # only for mode: https (optional)
+#       note:     free-form remark    # optional
+#
+# IMPORTANT: do NOT invent additional entries. Goat / camel / pig are
+# roadmap items pending dataset curation — see docs/DATASETS.md.
+
+cattle:
+  - name: cattely
+    mode: git
+    url: https://github.com/aideep1400/Cattely-Cattle-Face-Images-Dataset.git
+    license: see-repo
+    note: "Cattle face images repository — clone and inspect README for layout."
+
+  - name: cows-frontal-face-zenodo
+    mode: https
+    url: https://zenodo.org/records/10535934
+    file_url: https://zenodo.org/records/10535934/files/INDIVIDUAL%20SUBJECTS%20Data.zip?download=1
+    expected_bytes: 13901492880
+    license: open
+    note: "13.9 GB archive from Zenodo (DOI: 10.5281/zenodo.10535934)."
+
+  - name: huggingface-cows-detection
+    mode: huggingface
+    hf_id: UniqueData/cows-detection-dataset
+    url: https://huggingface.co/datasets/UniqueData/cows-detection-dataset
+    license: see-card
+
+  - name: pmc-cattle-muzzle
+    mode: manual
+    url: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC10869238/
+    license: CC-BY
+    note: "Cattle biometrics through muzzle images — supplementary materials accessed via the article page."
+
+sheep:
+  - name: sheepface-107
+    mode: manual
+    url: https://www.mdpi.com/2077-0472/13/9/1718
+    license: see-paper
+    note: "Sheepface-107 (5,350 images / 107 individuals) — MDPI page has no direct archive link; request dataset access from corresponding author (jdwp@imau.edu.cn)."
+
+  - name: roboflow-sheep-face-search
+    mode: manual
+    url: https://universe.roboflow.com/search/sheep%20face
+    license: per-dataset
+    note: "Roboflow Universe search page — choose a specific dataset, accept its license, then export/download with a Roboflow account and ROBOFLOW_API_KEY."
+
+horse:
+  - name: roboflow-horse-face
+    mode: manual
+    url: https://universe.roboflow.com/dlabequicare/horse-face-nfeoi
+    license: CC-BY-4.0
+    note: "Horse Face Object Detection (~2,660 images). Roboflow API/key supported: set ROBOFLOW_API_KEY env var; CLI prints a curl example."
+
+  - name: huggingface-horse-id
+    mode: huggingface
+    hf_id: Mobiusi/Horse-Individual-Identification-Dataset
+    url: https://huggingface.co/datasets/Mobiusi/Horse-Individual-Identification-Dataset
+    license: see-card
+
+  - name: pferd-pose
+    mode: git
+    url: https://github.com/Celiali/PFERD.git
+    license: see-repo
+    note: "PFERD — Poses for Equine Research Dataset (pose/3D, optional). Companion paper: https://www.nature.com/articles/s41597-024-03312-1"
