@@ -13,6 +13,7 @@ import threading
 from dataclasses import dataclass
 from typing import Optional
 
+import cv2
 import numpy as np
 
 from app.config import get_settings
@@ -37,6 +38,8 @@ _COCO_TO_SPECIES: dict[int, Species] = {
 }
 _TARGET_CLASSES = list(_COCO_TO_SPECIES.keys())
 _DEFAULT_CONF = 0.5
+_FALLBACK_CONFS = (0.35, 0.25)
+_FALLBACK_MIN_SIDE = 960
 _YOLO_WEIGHTS = "yolov8n.pt"
 
 
@@ -73,53 +76,90 @@ class SpeciesClassifier:
         if image_bgr is None or image_bgr.size == 0:
             raise AnimalNotDetectedError("Бос сурет / Empty image")
 
-        results = self._model.predict(
-            image_bgr, conf=conf, classes=_TARGET_CLASSES, verbose=False
-        )
-        if not results:
-            raise AnimalNotDetectedError("Жануар табылмады / No animal detected")
+        attempts: list[tuple[str, np.ndarray, float]] = [("base", image_bgr, 1.0)]
+        height, width = image_bgr.shape[:2]
+        min_side = min(height, width)
+        if min_side < _FALLBACK_MIN_SIDE:
+            scale = _FALLBACK_MIN_SIDE / float(min_side)
+            upscaled = cv2.resize(
+                image_bgr,
+                (int(round(width * scale)), int(round(height * scale))),
+                interpolation=cv2.INTER_LINEAR,
+            )
+            attempts.append(("upscaled", upscaled, scale))
 
-        boxes = results[0].boxes
-        if boxes is None or len(boxes) == 0:
-            raise AnimalNotDetectedError("Жануар табылмады / No animal detected")
+        confs: list[float] = [float(conf)]
+        for fallback_conf in _FALLBACK_CONFS:
+            if fallback_conf not in confs and fallback_conf < conf:
+                confs.append(float(fallback_conf))
 
-        confidences = boxes.conf.cpu().numpy()
-        classes = boxes.cls.cpu().numpy().astype(int)
-        xyxy = boxes.xyxy.cpu().numpy().astype(np.float32)
+        for conf_level in confs:
+            for mode, frame, scale in attempts:
+                results = self._model.predict(
+                    frame,
+                    conf=conf_level,
+                    classes=_TARGET_CLASSES,
+                    verbose=False,
+                )
+                if not results:
+                    continue
 
-        if len(confidences) > 1:
-            keep = accel.nms(xyxy, confidences.astype(np.float32), iou_threshold=0.5)
-            if keep.size > 0:
-                confidences = confidences[keep]
-                classes = classes[keep]
-                xyxy = xyxy[keep]
+                boxes = results[0].boxes
+                if boxes is None or len(boxes) == 0:
+                    continue
 
-        best = int(np.argmax(confidences))
-        cls_idx = int(classes[best])
-        if cls_idx not in _COCO_TO_SPECIES:
-            raise AnimalNotDetectedError("Қолдау көрсетілмейтін түр / Unsupported species")
+                confidences = boxes.conf.cpu().numpy()
+                classes = boxes.cls.cpu().numpy().astype(int)
+                xyxy = boxes.xyxy.cpu().numpy().astype(np.float32)
 
-        species = _COCO_TO_SPECIES[cls_idx]
-        confidence = float(confidences[best])
-        x1, y1, x2, y2 = (int(v) for v in xyxy[best])
-        try:
-            crop = accel.crop_bbox(image_bgr, (x1, y1, x2, y2))
-        except ValueError as exc:
-            raise AnimalNotDetectedError("Жануар табылмады / No animal detected") from exc
-        h, w = image_bgr.shape[:2]
-        x1, y1 = max(0, x1), max(0, y1)
-        x2, y2 = min(w, x2), min(h, y2)
+                if scale != 1.0:
+                    xyxy = xyxy / scale
 
-        logger.info(
-            "Detected species=%s confidence=%.3f bbox=(%d,%d,%d,%d)",
-            species.value, confidence, x1, y1, x2, y2,
-        )
+                if len(confidences) > 1:
+                    keep = accel.nms(xyxy, confidences.astype(np.float32), iou_threshold=0.5)
+                    if keep.size > 0:
+                        confidences = confidences[keep]
+                        classes = classes[keep]
+                        xyxy = xyxy[keep]
 
-        return SpeciesDetection(
-            species=species,
-            confidence=confidence,
-            bbox=(x1, y1, x2, y2),
-            cropped_image=crop,
+                best = int(np.argmax(confidences))
+                cls_idx = int(classes[best])
+                if cls_idx not in _COCO_TO_SPECIES:
+                    continue
+
+                species = _COCO_TO_SPECIES[cls_idx]
+                confidence = float(confidences[best])
+                x1, y1, x2, y2 = (int(v) for v in xyxy[best])
+                try:
+                    crop = accel.crop_bbox(image_bgr, (x1, y1, x2, y2))
+                except ValueError:
+                    continue
+
+                h, w = image_bgr.shape[:2]
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(w, x2), min(h, y2)
+
+                logger.info(
+                    "Detected species=%s confidence=%.3f bbox=(%d,%d,%d,%d) conf=%.2f mode=%s",
+                    species.value,
+                    confidence,
+                    x1,
+                    y1,
+                    x2,
+                    y2,
+                    conf_level,
+                    mode,
+                )
+
+                return SpeciesDetection(
+                    species=species,
+                    confidence=confidence,
+                    bbox=(x1, y1, x2, y2),
+                    cropped_image=crop,
+                )
+
+        raise AnimalNotDetectedError(
+            "Жануар табылмады / No animal detected. Photo must clearly contain one cattle/sheep/horse."
         )
 
 

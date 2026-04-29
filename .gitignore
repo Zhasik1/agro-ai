@@ -54,3 +54,4 @@ notebooks/.ipynb_checkpoints/
 .idea/
 .vscode/
 *.log
+yolov8n.pt

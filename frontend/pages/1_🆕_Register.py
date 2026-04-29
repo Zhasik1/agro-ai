@@ -62,7 +62,7 @@ if submitted:
                 emoji = SPECIES_EMOJI.get(animal["species"], "🐾")
                 st.success(
                     f"✅ Тіркелді: **{emoji} {animal['id']}** — "
-                    f"{animal['species']} (қ��еткіш {payload['detection_confidence']:.2f})"
+                    f"{animal['species']} (сенімділік {payload['detection_confidence']:.2f})"
                 )
                 st.json(animal)
             elif response.status_code == 409:
@@ -72,6 +72,13 @@ if submitted:
                     f"(ұқсастығы {err.get('similarity', 0):.2%})"
                 )
             elif response.status_code == 422:
-                st.error(f"⚠️ Валидация: {response.json()}")
+                err = response.json()
+                if err.get("type") == "animal_not_detected":
+                    st.error(
+                        "⚠️ Жануар табылмады. Фотода тек 1 мал анық, толық көрінсін: "
+                        "жақсы жарық, камераға жақын, бұлыңғыр емес, басы/денесі кадрда болсын."
+                    )
+                else:
+                    st.error(f"⚠️ Валидация: {err}")
             else:
                 st.error(f"❌ {response.status_code}: {response.text}")
